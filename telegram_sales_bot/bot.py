@@ -1,3 +1,6 @@
+import tracemalloc
+tracemalloc.start()
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 from config import TOKEN, ADMIN_ID
