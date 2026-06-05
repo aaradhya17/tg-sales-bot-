@@ -5,7 +5,7 @@ from handlers import start, menu, panels, flash_usdt, orders, help_command, add_
 from keyboards import main_menu
 
 def main():
-    updater = Updater(TOKEN, use_context=False)
+    updater = Updater(TOKEN, use_context=True)  # Set use_context to True
     dp = updater.dispatcher
 
     # Command handlers
