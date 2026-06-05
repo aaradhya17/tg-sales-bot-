@@ -105,4 +105,9 @@ def deliver_flash_usdt(user_id, amount, duration_hours, user_wallet_address):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
-    INSERT INTO orders (user_id, product
+    INSERT INTO orders (user_id, product_id, total_price, status, payment_address, payment_tx_id, created_at)
+    VALUES (?, ?, ?, 'pending', ?, ?, CURRENT_TIMESTAMP)
+    """, (user_id, None, amount, user_wallet_address, flash_data['transaction_id']))
+    conn.commit()
+    conn.close()
+    return flash_data
