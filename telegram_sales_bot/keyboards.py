@@ -11,10 +11,10 @@ def main_menu():
 
 def panels_menu():
     keyboard = [
-        [InlineKeyboardButton("Netflix Premium", callback_data="panel_netflix")],
-        [InlineKeyboardButton("Spotify Premium", callback_data="panel_spotify")],
-        [InlineKeyboardButton("YouTube Premium", callback_data="panel_youtube")],
-        [InlineKeyboardButton("Disney+", callback_data="panel_disney")],
+        [InlineKeyboardButton("jeevan", callback_data="panel_jeevan")],
+        [InlineKeyboardButton("Trizo", callback_data="panel_Trizo")],
+        [InlineKeyboardButton("Saving Land", callback_data="panel_Saving land")],
+        [InlineKeyboardButton("Dragon Pay", callback_data="panel_Dragon Pay")],
         [InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="menu_main")]
     ]
     return InlineKeyboardMarkup(keyboard)
