@@ -1,5 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackContext
+from telegram.ext import CallbackContext, CallbackQueryHandler
 from keyboards import main_menu, panels_menu, flash_usdt_menu
 from database import get_product_by_id, get_available_account, deliver_flash_usdt
 
