@@ -3,33 +3,33 @@ from telegram.ext import CallbackContext, CallbackQueryHandler
 from keyboards import main_menu, panels_menu, flash_usdt_menu
 from database import get_product_by_id, get_available_account, deliver_flash_usdt
 
-def start(update: Update, context: CallbackContext) -> None:
+async def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text("Welcome to the Account Panel and Flash USDT Bot!", reply_markup=main_menu())
 
-def menu(update: Update, context: CallbackContext) -> None:
+async def menu(update: Update, context: CallbackContext) -> None:
     update.message.reply_text("Main Menu", reply_markup=main_menu())
 
-def panels(update: Update, context: CallbackContext) -> None:
+async def panels(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
     query.edit_message_text("Available Account Panels", reply_markup=panels_menu())
 
-def flash_usdt(update: Update, context: CallbackContext) -> None:
+async def flash_usdt(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
     query.edit_message_text("Flash USDT Options", reply_markup=flash_usdt_menu())
 
-def orders(update: Update, context: CallbackContext) -> None:
+async def orders(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
     query.edit_message_text("Your Orders", reply_markup=main_menu())
 
-def help_command(update: Update, context: CallbackContext) -> None:
+async def help_command(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
     query.edit_message_text("Help Menu", reply_markup=main_menu())
 
-def panel_handler(update: Update, context: CallbackContext) -> None:
+async def panel_handler(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
     product_id = int(query.data.split('_')[2])
@@ -47,7 +47,7 @@ def panel_handler(update: Update, context: CallbackContext) -> None:
     else:
         query.edit_message_text("Product not found.")
 
-def flash_usdt_handler(update: Update, context: CallbackContext) -> None:
+async def flash_usdt_handler(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
     query.answer()
     amount = float(query.data.split('_')[2])
@@ -62,6 +62,6 @@ def flash_usdt_handler(update: Update, context: CallbackContext) -> None:
     else:
         query.edit_message_text("Failed to deliver flash USDT.")
 
-def add_handlers(application):
+async def add_handlers(application):
     application.add_handler(CallbackQueryHandler(panel_handler, pattern="^panel_"))
     application.add_handler(CallbackQueryHandler(flash_usdt_handler, pattern="^flash_usdt_"))
