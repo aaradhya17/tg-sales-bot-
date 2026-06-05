@@ -62,7 +62,6 @@ def flash_usdt_handler(update: Update, context: CallbackContext) -> None:
     else:
         query.edit_message_text("Failed to deliver flash USDT.")
 
-# Add callback query handlers for panels and flash USDT options
-def add_handlers(dp):
-    dp.add_handler(CallbackQueryHandler(panel_handler, pattern="^panel_"))
-    dp.add_handler(CallbackQueryHandler(flash_usdt_handler, pattern="^flash_usdt_"))
+def add_handlers(application):
+    application.add_handler(CallbackQueryHandler(panel_handler, pattern="^panel_"))
+    application.add_handler(CallbackQueryHandler(flash_usdt_handler, pattern="^flash_usdt_"))
