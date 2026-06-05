@@ -1,22 +1,30 @@
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-from config import TOKEN
-from handlers import start, menu, panels, flash_usdt, orders, help_command
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, CallbackContext
+from config import TOKEN, ADMIN_ID
+from handlers import start, menu, panels, flash_usdt, orders, help_command, add_handlers
+from keyboards import main_menu
 
 def main():
-    app = Application.builder().token(TOKEN).build()
+    updater = Updater(TOKEN, use_context=False)
+    dp = updater.dispatcher
 
     # Command handlers
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("menu", menu))
-    app.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("menu", menu))
+    dp.add_handler(CommandHandler("help", help_command))
 
     # Callback handlers
-    app.add_handler(CallbackQueryHandler(panels, pattern="^menu_panels$"))
-    app.add_handler(CallbackQueryHandler(flash_usdt, pattern="^menu_flash_usdt$"))
-    app.add_handler(CallbackQueryHandler(orders, pattern="^menu_orders$"))
-    app.add_handler(CallbackQueryHandler(help_command, pattern="^menu_help$"))
+    dp.add_handler(CallbackQueryHandler(panels, pattern="^menu_panels$"))
+    dp.add_handler(CallbackQueryHandler(flash_usdt, pattern="^menu_flash_usdt$"))
+    dp.add_handler(CallbackQueryHandler(orders, pattern="^menu_orders$"))
+    dp.add_handler(CallbackQueryHandler(help_command, pattern="^menu_help$"))
 
-    app.run_polling()
+    # Add handlers for panels and flash USDT options
+    add_handlers(dp)
+
+    # Start the Bot
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
     main()
