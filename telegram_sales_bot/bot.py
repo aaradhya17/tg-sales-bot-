@@ -4,7 +4,7 @@ tracemalloc.start()
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, CallbackContext
 from config import TOKEN, ADMIN_ID
-from handlers import start, menu, panels, flash_usdt, orders, help_command, add_handlers
+from handlers import start, menu, add_handlers
 from keyboards import main_menu
 
 def main():
