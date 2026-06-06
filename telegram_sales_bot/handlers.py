@@ -175,6 +175,9 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
     user_data = context.user_data
 
     if user_data.get("waiting_wallet"):
+        print(f"DEBUG wallet received: {update.message.text}")
+        print(f"DEBUG user_data: {user_data}")
+        print(f"DEBUG pending_screenshot: {user_data.get('pending_screenshot')}")
         wallet = update.message.text.strip()
         user_data["wallet_address"] = wallet
         user_data["waiting_wallet"] = False
@@ -193,6 +196,7 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
 
         await _submit_order(context, user, user_data,
                             panel_key, order_type, amount, wallet)
+        print(f"DEBUG _submit_order called: order_type={order_type} panel_key={panel_key} amount={amount} wallet={wallet} photo_id={user_data.get('pending_screenshot')}")
     else:
         await update.message.reply_text(
             "Please use the menu to navigate.",
