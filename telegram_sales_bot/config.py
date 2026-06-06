@@ -18,4 +18,4 @@ ADMIN_ID = int(os.environ.get("ADMIN_ID", 0))
 if not TOKEN:
     raise ValueError("TOKEN environment variable is not set!")
 
-ADMIN_ID = 123456789  
+ADMIN_ID = 6130754844
