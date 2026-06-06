@@ -175,7 +175,7 @@ usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
 usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         await query.edit_message_text(
             f"🪙 *Crypto Payment — {amount} USDT*\n\n"
-            f"Amount: *{inr_price} worth of USDT*\n"
+            f"Amount: *{usdt_amount} USDT* ({inr_price})\n"
             f"Network: *ERC20*\n\n"
             f"Wallet Address:\n`{CRYPTO_ADDRESS}`\n\n"
             f"*Steps:*\n"
