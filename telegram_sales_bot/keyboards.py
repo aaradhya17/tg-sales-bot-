@@ -15,6 +15,10 @@ def panels_menu():
         [InlineKeyboardButton("Trizo", callback_data="panel_trizo")],
         [InlineKeyboardButton("Saving Land", callback_data="panel_savingland")],
         [InlineKeyboardButton("Dragon Pay", callback_data="panel_dragonpay")],
+        [InlineKeyboardButton("Kuvera", callback_data="panel_kuvera")],
+        [InlineKeyboardButton("Big Winner", callback_data="panel_bigwinner")],
+        [InlineKeyboardButton("QQ Pay", callback_data="panel_qqpay")],
+        [InlineKeyboardButton("Inde Pay", callback_data="panel_indepay")],
         [InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="menu_main")]
     ]
     return InlineKeyboardMarkup(keyboard)
