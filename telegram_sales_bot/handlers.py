@@ -138,7 +138,8 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
     # ── FLASH USDT AMOUNT SELECTED ─────────────────────────
     elif data.startswith("flash_select_"):
         amount = data.split("_")[2]
-        inr_price = USDT_PRICES.get(amount, "")
+        inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
+usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         await query.edit_message_text(
             f"⚡ *Flash USDT — {amount} USDT*\n\n"
             f"💰 Price: *{inr_price}*\n\n"
