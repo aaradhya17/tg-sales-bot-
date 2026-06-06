@@ -27,6 +27,10 @@ PANEL_NAMES = {
     "panel_trizo":      "Trizo",
     "panel_savingland": "Saving Land",
     "panel_dragonpay":  "Dragon Pay",
+    "panel_kuvera":     "Kuvera",
+    "panel_bigwinner":  "Big Winner",
+    "panel_qqpay":      "QQ Pay",
+    "panel_indepay":    "Inde Pay",
 }
 
 async def start(update: Update, context: CallbackContext) -> None:
