@@ -12,9 +12,9 @@ def main_menu():
 def panels_menu():
     keyboard = [
         [InlineKeyboardButton("Jeevan", callback_data="panel_jeevan")],
-        [InlineKeyboardButton("Trizo", callback_data="panel_Trizo")],
-        [InlineKeyboardButton("Saving Land", callback_data="panel_Saving land")],
-        [InlineKeyboardButton("Dragon Pay", callback_data="panel_Dragon Pay")],
+        [InlineKeyboardButton("Trizo", callback_data="panel_trizo")],
+        [InlineKeyboardButton("Saving Land", callback_data="panel_savingland")],
+        [InlineKeyboardButton("Dragon Pay", callback_data="panel_dragonpay")],
         [InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="menu_main")]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -33,5 +33,13 @@ def payment_menu(amount):
         [InlineKeyboardButton("💳 Pay via UPI", callback_data=f"pay_upi_{amount}")],
         [InlineKeyboardButton("🪙 Pay via Crypto", callback_data=f"pay_crypto_{amount}")],
         [InlineKeyboardButton("⬅️ Back to USDT Menu", callback_data="menu_flash_usdt")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def panel_payment_menu(panel):
+    keyboard = [
+        [InlineKeyboardButton("💳 Pay via UPI", callback_data=f"panelpay_upi_{panel}")],
+        [InlineKeyboardButton("🪙 Pay via Crypto", callback_data=f"panelpay_crypto_{panel}")],
+        [InlineKeyboardButton("⬅️ Back to Panels", callback_data="menu_panels")]
     ]
     return InlineKeyboardMarkup(keyboard)
