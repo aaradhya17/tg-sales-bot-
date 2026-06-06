@@ -64,8 +64,7 @@ async def menu(update: Update, context: CallbackContext) -> None:
     )
 
 
-# ── SCREENSHOT HANDLER ─────────────────────────────────────
-async def handle_screenshot(update: Update, context: CallbackContext) -> None:
+# ── SCREENSHOT HANDLER ─────────────────────────────────────async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     user = update.message.from_user
     user_data = context.user_data
 
@@ -73,27 +72,25 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     order_type = user_data.get("pending_type", "panel")
     amount = user_data.get("pending_amount", "")
 
-    # Save everything to global dict using user_id as key
+    # Save EVERYTHING to global dict
     pending_orders[user.id] = {
-        "photo_id":   update.message.photo[-1].file_id,
-        "panel_key":  panel_key,
-        "order_type": order_type,
-        "amount":     amount,
+        "photo_id":      update.message.photo[-1].file_id,
+        "panel_key":     panel_key,
+        "order_type":    order_type,
+        "amount":        amount,
+        "waiting_wallet": order_type == "flash",
     }
 
     print(f"DEBUG screenshot saved for user {user.id}: {pending_orders[user.id]}")
 
-    # Flash order — ask for wallet
     if order_type == "flash":
         await update.message.reply_text(
             "👛 *Please enter your ERC20 wallet address:*\n\n"
             "Type and send it here — your order will be submitted automatically after.",
             parse_mode="Markdown"
         )
-        user_data["waiting_wallet"] = True
         return
 
-    # Panel order — submit directly
     await _submit_order(context, user, panel_key, order_type, amount, "")
 
 
