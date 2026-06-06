@@ -45,6 +45,10 @@ PANEL_DETAILS = {
     "indepay":    "🌐 URL: https://indepay.example.com",
 }
 
+# ── GLOBAL STORAGE — persists across messages ──────────────
+# { user_id: { "photo_id": ..., "panel_key": ..., "order_type": ..., "amount": ... } }
+pending_orders = {}
+
 
 async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
@@ -68,119 +72,136 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     panel_key = user_data.get("pending_panel", "unknown")
     order_type = user_data.get("pending_type", "panel")
     amount = user_data.get("pending_amount", "")
-    wallet = user_data.get("wallet_address", "")
 
-    # Always save the screenshot file_id first
-    user_data["pending_screenshot"] = update.message.photo[-1].file_id
+    # Save everything to global dict using user_id as key
+    pending_orders[user.id] = {
+        "photo_id":   update.message.photo[-1].file_id,
+        "panel_key":  panel_key,
+        "order_type": order_type,
+        "amount":     amount,
+    }
 
-    # Flash order — ask for wallet address
-    if order_type == "flash" and not wallet:
-        user_data["waiting_wallet"] = True
+    print(f"DEBUG screenshot saved for user {user.id}: {pending_orders[user.id]}")
+
+    # Flash order — ask for wallet
+    if order_type == "flash":
         await update.message.reply_text(
             "👛 *Please enter your ERC20 wallet address:*\n\n"
             "Type and send it here — your order will be submitted automatically after.",
             parse_mode="Markdown"
         )
+        user_data["waiting_wallet"] = True
         return
 
     # Panel order — submit directly
-    await _submit_order(context, user, user_data,
-                        panel_key, order_type, amount, wallet)
+    await _submit_order(context, user, panel_key, order_type, amount, "")
 
 
 # ── SUBMIT ORDER TO ADMIN ──────────────────────────────────
-async def _submit_order(context, user, user_data,
-                        panel_key, order_type, amount, wallet):
-
-    if order_type == "panel":
-        panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
-        order_desc = f"💳 Panel: *{panel_name}*\n💰 Amount: *{PANEL_PRICE}*"
-    else:
-        prices = USDT_PRICES.get(amount, {})
-        order_desc = (
-            f"⚡ Flash USDT: *{amount} USDT*\n"
-            f"💰 Amount: *{prices.get('inr', '')}* "
-            f"({prices.get('usdt', '')} USDT)\n"
-            f"👛 Buyer Wallet: `{wallet}`"
-        )
-
-    # Thank you + confirm button to buyer
-    confirm_buyer_kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton(
-            "✅ Confirm Payment Sent",
-            callback_data=f"buyerconfirm_{panel_key}_{order_type}_{amount}"
-        )]
-    ])
-
-    await context.bot.send_message(
-        chat_id=user.id,
-        text=(
-            "🙏 *Thank you for your purchase!*\n\n"
-            "⏳ Please wait while we confirm your payment.\n\n"
-            "📦 Your order will be sent to you after confirmation.\n\n"
-            "👇 Click below to confirm you have sent the payment:"
-        ),
-        parse_mode="Markdown",
-        reply_markup=confirm_buyer_kb
-    )
-
-    # Admin confirm/reject buttons
-    admin_kb = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "✅ Confirm & Send Order",
-                callback_data=f"confirm_{user.id}_{panel_key}_{order_type}_{amount}"
-            ),
-            InlineKeyboardButton(
-                "❌ Reject",
-                callback_data=f"reject_{user.id}"
-            )
-        ]
-    ])
-
-    caption = (
-        f"📸 *New Payment Screenshot*\n\n"
-        f"👤 User: [{user.first_name}](tg://user?id={user.id})\n"
-        f"🆔 User ID: `{user.id}`\n\n"
-        f"📋 *Order Details:*\n{order_desc}"
-    )
-
-    # Get the saved screenshot
-    photo_id = user_data.get("pending_screenshot")
-
+async def _submit_order(context, user, panel_key, order_type, amount, wallet):
     try:
-        await context.bot.send_photo(
-            chat_id=ADMIN_ID,
-            photo=photo_id,
-            caption=caption,
+        # Get stored data from global dict
+        order_data = pending_orders.get(user.id, {})
+        photo_id = order_data.get("photo_id")
+
+        print(f"DEBUG _submit_order: user={user.id} order_type={order_type} panel_key={panel_key} amount={amount} wallet={wallet} photo_id={photo_id}")
+
+        if order_type == "panel":
+            panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
+            order_desc = f"💳 Panel: *{panel_name}*\n💰 Amount: *{PANEL_PRICE}*"
+        else:
+            prices = USDT_PRICES.get(amount, {})
+            order_desc = (
+                f"⚡ Flash USDT: *{amount} USDT*\n"
+                f"💰 Amount: *{prices.get('inr', '')}* "
+                f"({prices.get('usdt', '')} USDT)\n"
+                f"👛 Buyer Wallet: `{wallet}`"
+            )
+
+        # Thank you + confirm button to buyer
+        confirm_buyer_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton(
+                "✅ Confirm Payment Sent",
+                callback_data=f"buyerconfirm_{panel_key}_{order_type}_{amount}"
+            )]
+        ])
+
+        await context.bot.send_message(
+            chat_id=user.id,
+            text=(
+                "🙏 *Thank you for your purchase!*\n\n"
+                "⏳ Please wait while we confirm your payment.\n\n"
+                "📦 Your order will be sent to you after confirmation.\n\n"
+                "👇 Click below to confirm you have sent the payment:"
+            ),
             parse_mode="Markdown",
-            reply_markup=admin_kb
+            reply_markup=confirm_buyer_kb
         )
+
+        # Admin buttons
+        admin_kb = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "✅ Confirm & Send Order",
+                    callback_data=f"confirm_{user.id}_{panel_key}_{order_type}_{amount}"
+                ),
+                InlineKeyboardButton(
+                    "❌ Reject",
+                    callback_data=f"reject_{user.id}"
+                )
+            ]
+        ])
+
+        caption = (
+            f"📸 *New Payment Screenshot*\n\n"
+            f"👤 User: [{user.first_name}](tg://user?id={user.id})\n"
+            f"🆔 User ID: `{user.id}`\n\n"
+            f"📋 *Order Details:*\n{order_desc}"
+        )
+
+        if photo_id:
+            await context.bot.send_photo(
+                chat_id=ADMIN_ID,
+                photo=photo_id,
+                caption=caption,
+                parse_mode="Markdown",
+                reply_markup=admin_kb
+            )
+        else:
+            # No photo — send text only
+            await context.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=f"⚠️ No screenshot.\n\n{caption}",
+                parse_mode="Markdown",
+                reply_markup=admin_kb
+            )
+
+        # Clear from global dict after sending
+        pending_orders.pop(user.id, None)
+
     except Exception as e:
+        print(f"ERROR in _submit_order: {e}")
+        await context.bot.send_message(
+            chat_id=user.id,
+            text=f"⚠️ Something went wrong. Please contact {ADMIN_USERNAME}\n\nError: {e}"
+        )
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"⚠️ Screenshot forward failed.\n\n{caption}\n\nError: {e}",
-            parse_mode="Markdown",
-            reply_markup=admin_kb
+            text=f"⚠️ Order submission error\nUser: {user.id}\nError: {e}"
         )
-
-    # Clear all pending data after submission
-    user_data.pop("wallet_address", None)
-    user_data.pop("waiting_wallet", None)
-    user_data.pop("pending_screenshot", None)
 
 
 # ── TEXT HANDLER (wallet address) ─────────────────────────
 async def handle_text(update: Update, context: CallbackContext) -> None:
     user_data = context.user_data
+    user = update.message.from_user
 
     if user_data.get("waiting_wallet"):
-        print(f"DEBUG wallet received: {update.message.text}")
-        print(f"DEBUG user_data: {user_data}")
-        print(f"DEBUG pending_screenshot: {user_data.get('pending_screenshot')}")
         wallet = update.message.text.strip()
-        user_data["wallet_address"] = wallet
         user_data["waiting_wallet"] = False
+
+        print(f"DEBUG wallet received from {user.id}: {wallet}")
+        print(f"DEBUG pending_orders for user: {pending_orders.get(user.id)}")
 
         await update.message.reply_text(
             f"✅ Wallet saved:\n`{wallet}`\n\n"
@@ -188,15 +209,14 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
             parse_mode="Markdown"
         )
 
-        # Now submit — screenshot is already saved in pending_screenshot
-        user = update.message.from_user
-        panel_key = user_data.get("pending_panel", "unknown")
-        order_type = user_data.get("pending_type", "flash")
-        amount = user_data.get("pending_amount", "")
+        # Get order details from global dict
+        order_data = pending_orders.get(user.id, {})
+        panel_key = order_data.get("panel_key", "unknown")
+        order_type = order_data.get("order_type", "flash")
+        amount = order_data.get("amount", "")
 
-        await _submit_order(context, user, user_data,
-                            panel_key, order_type, amount, wallet)
-        print(f"DEBUG _submit_order called: order_type={order_type} panel_key={panel_key} amount={amount} wallet={wallet} photo_id={user_data.get('pending_screenshot')}")
+        await _submit_order(context, user, panel_key, order_type, amount, wallet)
+
     else:
         await update.message.reply_text(
             "Please use the menu to navigate.",
