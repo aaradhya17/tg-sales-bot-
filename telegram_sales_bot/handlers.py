@@ -64,8 +64,8 @@ async def menu(update: Update, context: CallbackContext) -> None:
     )
 
 
-# ── SCREENSHOT HANDLER ─────────────────────────────────────
-    async def handle_screenshot(update: Update, context: CallbackContext) -> None:
+# ── SCREENSHOT HANDLER ─────────────────────────────────────#
+async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     user = update.message.from_user
     user_data = context.user_data
 
@@ -73,12 +73,11 @@ async def menu(update: Update, context: CallbackContext) -> None:
     order_type = user_data.get("pending_type", "panel")
     amount = user_data.get("pending_amount", "")
 
-    # Save EVERYTHING to global dict
     pending_orders[user.id] = {
-        "photo_id":      update.message.photo[-1].file_id,
-        "panel_key":     panel_key,
-        "order_type":    order_type,
-        "amount":        amount,
+        "photo_id":       update.message.photo[-1].file_id,
+        "panel_key":      panel_key,
+        "order_type":     order_type,
+        "amount":         amount,
         "waiting_wallet": order_type == "flash",
     }
 
