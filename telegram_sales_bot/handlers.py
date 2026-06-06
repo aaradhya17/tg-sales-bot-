@@ -12,7 +12,7 @@ from keyboards import (
 UPI_ID = "aaradhyya@slc"
 UPI_NAME = "aaradhya"
 CRYPTO_ADDRESS = "0xc2bb8b613c19aDA1605E6c71aF44CC6b4bb9076a"   # ERC20 wallet address
-ADMIN_USERNAME = "@@Iamhere0013"
+ADMIN_USERNAME = "@Iamhere0013"
 PANEL_PRICE = "₹800"
 # ──────────────────────────────────────────────────────────
 
@@ -180,7 +180,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
             f"Wallet Address:\n`{CRYPTO_ADDRESS}`\n\n"
             f"*Steps:*\n"
             f"1️⃣ Open your crypto wallet\n"
-            f"2️⃣ Send {amount} USDT on *ERC20 network*\n"
+            f"2️⃣ Send {usdt_amount} USDT on *ERC20 network*\n"
             f"3️⃣ Copy transaction hash\n"
             f"4️⃣ Send hash to {ADMIN_USERNAME}\n\n"
             f"✅ Confirmed within 30 minutes.",
