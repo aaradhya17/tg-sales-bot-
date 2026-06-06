@@ -70,24 +70,26 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     amount = user_data.get("pending_amount", "")
     wallet = user_data.get("wallet_address", "")
 
-    # Flash order but no wallet yet — save screenshot, ask for wallet once
+    # Always save the screenshot file_id first
+    user_data["pending_screenshot"] = update.message.photo[-1].file_id
+
+    # Flash order — ask for wallet address
     if order_type == "flash" and not wallet:
-        user_data["pending_screenshot"] = update.message.photo[-1].file_id
         user_data["waiting_wallet"] = True
         await update.message.reply_text(
             "👛 *Please enter your ERC20 wallet address:*\n\n"
-            "Type and send it below — your order will be submitted automatically after.",
+            "Type and send it here — your order will be submitted automatically after.",
             parse_mode="Markdown"
         )
         return
 
-    # Panel order or flash with wallet already saved — submit directly
-    await _submit_order(update, context, user, user_data,
+    # Panel order — submit directly
+    await _submit_order(context, user, user_data,
                         panel_key, order_type, amount, wallet)
 
 
-# ── SUBMIT ORDER ───────────────────────────────────────────
-async def _submit_order(update, context, user, user_data,
+# ── SUBMIT ORDER TO ADMIN ──────────────────────────────────
+async def _submit_order(context, user, user_data,
                         panel_key, order_type, amount, wallet):
 
     if order_type == "panel":
@@ -102,7 +104,7 @@ async def _submit_order(update, context, user, user_data,
             f"👛 Buyer Wallet: `{wallet}`"
         )
 
-    # Thank you message to buyer with confirm button
+    # Thank you + confirm button to buyer
     confirm_buyer_kb = InlineKeyboardMarkup([
         [InlineKeyboardButton(
             "✅ Confirm Payment Sent",
@@ -122,7 +124,7 @@ async def _submit_order(update, context, user, user_data,
         reply_markup=confirm_buyer_kb
     )
 
-    # Admin buttons
+    # Admin confirm/reject buttons
     admin_kb = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
@@ -143,9 +145,8 @@ async def _submit_order(update, context, user, user_data,
         f"📋 *Order Details:*\n{order_desc}"
     )
 
-    photo_id = user_data.pop("pending_screenshot", None)
-    if not photo_id and update.message:
-        photo_id = update.message.photo[-1].file_id
+    # Get the saved screenshot
+    photo_id = user_data.get("pending_screenshot")
 
     try:
         await context.bot.send_photo(
@@ -158,7 +159,7 @@ async def _submit_order(update, context, user, user_data,
     except Exception as e:
         await context.bot.send_message(
             chat_id=ADMIN_ID,
-            text=f"⚠️ Could not forward screenshot.\n\n{caption}\n\nError: {e}",
+            text=f"⚠️ Screenshot forward failed.\n\n{caption}\n\nError: {e}",
             parse_mode="Markdown",
             reply_markup=admin_kb
         )
@@ -169,7 +170,7 @@ async def _submit_order(update, context, user, user_data,
     user_data.pop("pending_screenshot", None)
 
 
-# ── TEXT HANDLER ───────────────────────────────────────────
+# ── TEXT HANDLER (wallet address) ─────────────────────────
 async def handle_text(update: Update, context: CallbackContext) -> None:
     user_data = context.user_data
 
@@ -178,26 +179,20 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
         user_data["wallet_address"] = wallet
         user_data["waiting_wallet"] = False
 
-        # Screenshot was already sent before wallet — submit now
-        if user_data.get("pending_screenshot"):
-            await update.message.reply_text(
-                f"✅ Wallet saved:\n`{wallet}`\n\n"
-                f"📤 Submitting your order now...",
-                parse_mode="Markdown"
-            )
-            user = update.message.from_user
-            panel_key = user_data.get("pending_panel", "unknown")
-            order_type = user_data.get("pending_type", "flash")
-            amount = user_data.get("pending_amount", "")
-            await _submit_order(update, context, user, user_data,
-                                panel_key, order_type, amount, wallet)
-        else:
-            # Wallet saved, now waiting for screenshot
-            await update.message.reply_text(
-                f"✅ Wallet saved:\n`{wallet}`\n\n"
-                f"📸 Now send your payment screenshot.",
-                parse_mode="Markdown"
-            )
+        await update.message.reply_text(
+            f"✅ Wallet saved:\n`{wallet}`\n\n"
+            f"📤 Submitting your order now...",
+            parse_mode="Markdown"
+        )
+
+        # Now submit — screenshot is already saved in pending_screenshot
+        user = update.message.from_user
+        panel_key = user_data.get("pending_panel", "unknown")
+        order_type = user_data.get("pending_type", "flash")
+        amount = user_data.get("pending_amount", "")
+
+        await _submit_order(context, user, user_data,
+                            panel_key, order_type, amount, wallet)
     else:
         await update.message.reply_text(
             "Please use the menu to navigate.",
@@ -397,7 +392,6 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         context.user_data["pending_type"] = "flash"
         context.user_data["pending_amount"] = amount
-        # DO NOT set waiting_wallet here — only set it when screenshot arrives
         await query.edit_message_text(
             f"💳 *UPI Payment*\n\n"
             f"Amount: *{inr_price}* ({usdt_amount} USDT)\n\n"
@@ -420,7 +414,6 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         context.user_data["pending_type"] = "flash"
         context.user_data["pending_amount"] = amount
-        # DO NOT set waiting_wallet here — only set it when screenshot arrives
         await query.edit_message_text(
             f"🪙 *Crypto Payment*\n\n"
             f"Amount: *{usdt_amount} USDT* ({inr_price})\n"
