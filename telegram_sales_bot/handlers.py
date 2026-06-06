@@ -1,7 +1,7 @@
 import tracemalloc
 tracemalloc.start()
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackContext, MessageHandler, filters
+from telegram.ext import CallbackContext
 from keyboards import (
     main_menu, panels_menu, flash_usdt_menu,
     payment_menu, panel_payment_menu,
@@ -13,7 +13,7 @@ UPI_ID = "aaradhyya@slc"
 UPI_NAME = "aaradhya"
 CRYPTO_ADDRESS = "0xc2bb8b613c19aDA1605E6c71aF44CC6b4bb9076a"
 ADMIN_USERNAME = "@mrjinhere"
-ADMIN_ID = 8612577961    # ← replace with your real Telegram ID from @userinfobot
+ADMIN_ID = 8612577961
 PANEL_PRICE = "₹800"
 # ──────────────────────────────────────────────────────────
 
@@ -34,20 +34,19 @@ PANEL_NAMES = {
     "panel_indepay":    "Inde Pay",
 }
 
-# Panel details sent to buyer after admin confirms payment
 PANEL_DETAILS = {
-    "jeevan":      "🌐 URL: https://www.okbinances.com/cmw/#/login/Qlf5N1SU\n👤 User: jeevan_user\n🔑 Pass: jeevan123",
-    "trizo":       "🌐 URL: https://trizo.xyraflo.com/register.html?inviteCode=yUodx3\n👤 User: trizo_user\n🔑 Pass: trizo123",
-    "savingland":  "🌐 URL: https://savings-land.com/reg?code=6nmjOs\n👤 User: saving_user\n🔑 Pass: saving123",
-    "dragonpay":   "🌐 URL: https://dragonpay.example.com\n👤 User: dragon_user\n🔑 Pass: dragon123",
-    "kuvera":      "🌐 URL: https://mobile.kvrpay.in/#/pages/user/register?invite_code=jjD2d5\n👤 User: kuvera_user\n🔑 Pass: kuvera123",
-    "bigwinner":   "🌐 URL: https://bigwinner.example.com\n👤 User: big_user\n🔑 Pass: big123",
-    "qqpay":       "🌐 URL: https://qqpay.example.com\n👤 User: qq_user\n🔑 Pass: qq123",
-    "indepay":     "🌐 URL: https://indepay.example.com\n👤 User: inde_user\n🔑 Pass: inde123",
+    "jeevan":     "🌐 URL: https://www.okbinances.com/cmw/#/login/Qlf5N1SU",
+    "trizo":      "🌐 URL: https://trizo.xyraflo.com/register.html?inviteCode=yUodx3",
+    "savingland": "🌐 URL: https://savings-land.com/reg?code=6nmjOs",
+    "dragonpay":  "🌐 URL: https://dragonpay.example.com",
+    "kuvera":     "🌐 URL: https://mobile.kvrpay.in/#/pages/user/register?invite_code=jjD2d5",
+    "bigwinner":  "🌐 URL: https://bigwinner.example.com",
+    "qqpay":      "🌐 URL: https://qqpay.example.com",
+    "indepay":    "🌐 URL: https://indepay.example.com",
 }
 
-# stores pending orders: {admin_msg_id: {user_id, panel_key, type}}
-pending_orders = {}
+# stores wallet addresses for flash USDT buyers: {user_id: wallet}
+user_wallets = {}
 
 
 async def start(update: Update, context: CallbackContext) -> None:
@@ -70,6 +69,7 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     panel_key = user_data.get("pending_panel", "unknown")
     order_type = user_data.get("pending_type", "panel")
     amount = user_data.get("pending_amount", "")
+    wallet = user_data.get("wallet_address", "Not provided")
 
     # Build order description
     if order_type == "panel":
@@ -79,11 +79,12 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         prices = USDT_PRICES.get(amount, {})
         order_desc = (
             f"⚡ Flash USDT: *{amount} USDT*\n"
-            f"💰 Amount: *{prices.get('inr','')}* "
-            f"({prices.get('usdt','')} USDT)"
+            f"💰 Amount: *{prices.get('inr', '')}* "
+            f"({prices.get('usdt', '')} USDT)\n"
+            f"👛 Buyer Wallet: `{wallet}`"
         )
 
-    # ── STEP 1: Send thank you + confirm button to BUYER ──
+    # Confirm button for buyer
     confirm_buyer_kb = InlineKeyboardMarkup([
         [InlineKeyboardButton(
             "✅ Confirm Payment Sent",
@@ -100,7 +101,7 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         reply_markup=confirm_buyer_kb
     )
 
-    # ── STEP 2: Forward screenshot + buttons to ADMIN ──────
+    # Admin buttons
     admin_kb = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
@@ -130,23 +131,31 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
             reply_markup=admin_kb
         )
     except Exception as e:
-        # If photo send fails, try sending as document
-        try:
-            await context.bot.send_document(
-                chat_id=ADMIN_ID,
-                document=update.message.photo[-1].file_id,
-                caption=caption,
-                parse_mode="Markdown",
-                reply_markup=admin_kb
-            )
-        except Exception as e2:
-            # Notify admin by text if everything fails
-            await context.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=f"⚠️ Could not forward screenshot.\n\n{caption}\n\nError: {e2}",
-                parse_mode="Markdown",
-                reply_markup=admin_kb
-            )
+        await context.bot.send_message(
+            chat_id=ADMIN_ID,
+            text=f"⚠️ Could not forward screenshot.\n\n{caption}\n\nError: {e}",
+            parse_mode="Markdown",
+            reply_markup=admin_kb
+        )
+
+# ── WALLET ADDRESS HANDLER ─────────────────────────────────
+async def handle_text(update: Update, context: CallbackContext) -> None:
+    user_data = context.user_data
+    # Only save if we are waiting for wallet address
+    if user_data.get("waiting_wallet"):
+        wallet = update.message.text.strip()
+        user_data["wallet_address"] = wallet
+        user_data["waiting_wallet"] = False
+        await update.message.reply_text(
+            f"✅ Wallet address saved:\n`{wallet}`\n\n"
+            f"Now please send your payment screenshot.",
+            parse_mode="Markdown"
+        )
+    else:
+        await update.message.reply_text(
+            "Please use the menu to navigate.",
+            reply_markup=main_menu()
+        )
 
 async def handle_callbacks(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
@@ -161,7 +170,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         order_type = parts[3]
         amount = parts[4] if len(parts) > 4 else ""
 
-    if order_type == "panel":
+        if order_type == "panel":
             panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
             details = PANEL_DETAILS.get(panel_key, "Contact admin for details.")
             await context.bot.send_message(
@@ -170,7 +179,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
                     f"✅ *Payment Confirmed!*\n\n"
                     f"🎉 Thank you! Here are your *{panel_name}* panel details:\n\n"
                     f"{details}\n\n"
-                    f"⚠️ Keep these credentials safe.\n"
+                    f"⚠️ Keep these details safe.\n"
                     f"For support: {ADMIN_USERNAME}"
                 ),
                 parse_mode="Markdown"
@@ -181,30 +190,40 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
                 chat_id=user_id,
                 text=(
                     f"✅ *Payment Confirmed!*\n\n"
-                    f"⚡ Your *{prices.get('usdt','')} USDT* has been processed.\n"
+                    f"⚡ Your *{prices.get('usdt', '')} USDT* has been processed.\n"
                     f"It will be sent to your wallet shortly.\n\n"
                     f"For support: {ADMIN_USERNAME}"
                 ),
                 parse_mode="Markdown"
             )
 
-
-        # ── BUYER CONFIRMS PAYMENT SENT ────────────────────────
-    elif data.startswith("buyerconfirm_"):
-        await query.edit_message_text(
-            "✅ *Payment confirmation received!*\n\n"
-            "🔍 Our admin is reviewing your screenshot now.\n\n"
-            "⏳ Your order will be delivered to you shortly.\n\n"
-            f"For any help: {ADMIN_USERNAME}",
-            parse_mode="Markdown"
-        )
-
-        
-        # Update admin message to show confirmed
+        # Update admin message
         await query.edit_message_caption(
-            caption=query.message.caption + "\n\n✅ *CONFIRMED by admin*",
+            caption=query.message.caption + "\n\n✅ *CONFIRMED — Order sent to user*",
             parse_mode="Markdown"
         )
+
+    # ── BUYER CONFIRMS PAYMENT SENT ────────────────────────
+    elif data.startswith("buyerconfirm_"):
+        parts = data.split("_")
+        order_type = parts[2] if len(parts) > 2 else "panel"
+
+        # If flash USDT, ask for wallet address first
+        if order_type == "flash":
+            context.user_data["waiting_wallet"] = True
+            await query.edit_message_text(
+                "✅ *Payment confirmation received!*\n\n"
+                "👛 Please send your *ERC20 wallet address* so we can send your USDT:",
+                parse_mode="Markdown"
+            )
+        else:
+            await query.edit_message_text(
+                "✅ *Payment confirmation received!*\n\n"
+                "🔍 Our admin is reviewing your screenshot now.\n\n"
+                "⏳ Your order will be delivered to you shortly.\n\n"
+                f"For any help: {ADMIN_USERNAME}",
+                parse_mode="Markdown"
+            )
 
     # ── ADMIN REJECT PAYMENT ───────────────────────────────
     elif data.startswith("reject_"):
