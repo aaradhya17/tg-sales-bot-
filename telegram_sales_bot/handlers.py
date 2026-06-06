@@ -13,7 +13,7 @@ UPI_ID = "aaradhyya@slc"
 UPI_NAME = "aaradhya"
 CRYPTO_ADDRESS = "0xc2bb8b613c19aDA1605E6c71aF44CC6b4bb9076a"
 ADMIN_USERNAME = "@mrjinhere"
-ADMIN_ID = 123456789    # ← replace with your real Telegram ID from @userinfobot
+ADMIN_ID = 8612577961    # ← replace with your real Telegram ID from @userinfobot
 PANEL_PRICE = "₹800"
 # ──────────────────────────────────────────────────────────
 
