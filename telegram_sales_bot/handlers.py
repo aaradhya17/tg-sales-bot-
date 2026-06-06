@@ -67,15 +67,9 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     user = update.message.from_user
     user_data = context.user_data
 
-    panel_key = user_data.get("pending_panel")
+    panel_key = user_data.get("pending_panel", "unknown")
     order_type = user_data.get("pending_type", "panel")
     amount = user_data.get("pending_amount", "")
-
-    if not panel_key and order_type != "flash":
-        await update.message.reply_text(
-            "⚠️ Please select a panel or USDT amount first before sending screenshot."
-        )
-        return
 
     # Build order description
     if order_type == "panel":
@@ -83,41 +77,76 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         order_desc = f"💳 Panel: *{panel_name}*\n💰 Amount: *{PANEL_PRICE}*"
     else:
         prices = USDT_PRICES.get(amount, {})
-        order_desc = f"⚡ Flash USDT: *{amount} USDT*\n💰 Amount: *{prices.get('inr','')}* ({prices.get('usdt','')} USDT)"
+        order_desc = (
+            f"⚡ Flash USDT: *{amount} USDT*\n"
+            f"💰 Amount: *{prices.get('inr','')}* "
+            f"({prices.get('usdt','')} USDT)"
+        )
 
-    # Admin confirm/reject buttons
-    confirm_kb = InlineKeyboardMarkup([
+    # ── STEP 1: Send thank you + confirm button to BUYER ──
+    confirm_buyer_kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton(
+            "✅ Confirm Payment Sent",
+            callback_data=f"buyerconfirm_{panel_key}_{order_type}_{amount}"
+        )]
+    ])
+
+    await update.message.reply_text(
+        "🙏 *Thank you for your purchase!*\n\n"
+        "⏳ Please wait while we confirm your payment.\n\n"
+        "📦 Your order will be sent to you after confirmation.\n\n"
+        "👇 Click the button below to confirm you have sent the payment:",
+        parse_mode="Markdown",
+        reply_markup=confirm_buyer_kb
+    )
+
+    # ── STEP 2: Forward screenshot + buttons to ADMIN ──────
+    admin_kb = InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("✅ Confirm Payment", callback_data=f"confirm_{user.id}_{panel_key}_{order_type}_{amount}"),
-            InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user.id}")
+            InlineKeyboardButton(
+                "✅ Confirm & Send Order",
+                callback_data=f"confirm_{user.id}_{panel_key}_{order_type}_{amount}"
+            ),
+            InlineKeyboardButton(
+                "❌ Reject",
+                callback_data=f"reject_{user.id}"
+            )
         ]
     ])
 
-    # Forward screenshot to admin
     caption = (
         f"📸 *New Payment Screenshot*\n\n"
         f"👤 User: [{user.first_name}](tg://user?id={user.id})\n"
-        f"🆔 User ID: `{user.id}`\n"
-        f"📋 Order:\n{order_desc}"
+        f"🆔 User ID: `{user.id}`\n\n"
+        f"📋 *Order Details:*\n{order_desc}"
     )
 
-    await context.bot.send_photo(
-        chat_id=ADMIN_ID,
-        photo=update.message.photo[-1].file_id,
-        caption=caption,
-        parse_mode="Markdown",
-        reply_markup=confirm_kb
-    )
-
-    # ── THIS IS THE NEW MESSAGE SENT TO BUYER INSTANTLY ──
-    await update.message.reply_text(
-        "🙏 *Thank you for your purchase!*\n\n"
-        "⏳ Please wait while we are confirming your payment.\n\n"
-        "📦 Your order will be sent to you after confirmation.\n\n"
-        f"For any help contact: {ADMIN_USERNAME}",
-        parse_mode="Markdown"
-    )
-
+    try:
+        await context.bot.send_photo(
+            chat_id=ADMIN_ID,
+            photo=update.message.photo[-1].file_id,
+            caption=caption,
+            parse_mode="Markdown",
+            reply_markup=admin_kb
+        )
+    except Exception as e:
+        # If photo send fails, try sending as document
+        try:
+            await context.bot.send_document(
+                chat_id=ADMIN_ID,
+                document=update.message.photo[-1].file_id,
+                caption=caption,
+                parse_mode="Markdown",
+                reply_markup=admin_kb
+            )
+        except Exception as e2:
+            # Notify admin by text if everything fails
+            await context.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=f"⚠️ Could not forward screenshot.\n\n{caption}\n\nError: {e2}",
+                parse_mode="Markdown",
+                reply_markup=admin_kb
+            )
 
 async def handle_callbacks(update: Update, context: CallbackContext) -> None:
     query = update.callback_query
