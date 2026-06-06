@@ -11,7 +11,7 @@ from keyboards import (
 # ── EDIT THESE WITH YOUR DETAILS ──────────────────────────
 UPI_ID = "aaradhyya@slc"
 UPI_NAME = "aaradhya"
-CRYPTO_ADDRESS = "0xc2bb8b613c19aDA1605E6c71aF44CC6b4bb9076a"   # ERC20 wallet address
+CRYPTO_ADDRESS = "0xc2bb8b613c19aDA1605E6c71aF44CC6b4bb9076a"
 ADMIN_USERNAME = "@Iamhere0013"
 PANEL_PRICE = "₹800"
 # ──────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
             reply_markup=panel_payment_menu(panel_key)
         )
 
-    # ── PANEL UPI PAYMENT → show only Crypto option after ─
+    # ── PANEL UPI PAYMENT ─────────────────────────────────
     elif data.startswith("panelpay_upi_"):
         panel_key = data.replace("panelpay_upi_", "")
         panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
@@ -116,7 +116,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
             reply_markup=after_upi_menu(panel_key, "panel")
         )
 
-    # ── PANEL CRYPTO PAYMENT → show only UPI option after ─
+    # ── PANEL CRYPTO PAYMENT ───────────────────────────────
     elif data.startswith("panelpay_crypto_"):
         panel_key = data.replace("panelpay_crypto_", "")
         panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
@@ -141,21 +141,21 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
         usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         await query.edit_message_text(
-            f"⚡ *Flash USDT — {amount} USDT*\n\n"
+            f"⚡ *Flash USDT*\n\n"
             f"💰 Price: *{inr_price}* ({usdt_amount} USDT)\n\n"
             f"Choose payment method:",
             parse_mode="Markdown",
             reply_markup=payment_menu(amount)
         )
 
-    # ── FLASH UPI PAYMENT → show only Crypto option after ─
+    # ── FLASH UPI PAYMENT ──────────────────────────────────
     elif data.startswith("pay_upi_"):
         amount = data.split("_")[2]
         inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
         usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         await query.edit_message_text(
-            f"💳 *UPI Payment — {amount} USDT*\n\n"
-            f"Amount: *{inr_price}*\n\n"
+            f"💳 *UPI Payment*\n\n"
+            f"Amount: *{inr_price}* ({usdt_amount} USDT)\n\n"
             f"UPI ID: `{UPI_ID}`\n"
             f"Name: *{UPI_NAME}*\n\n"
             f"*Steps:*\n"
@@ -168,13 +168,13 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
             reply_markup=after_upi_menu(amount, "flash")
         )
 
-    # ── FLASH CRYPTO PAYMENT → show only UPI option after ─
+    # ── FLASH CRYPTO PAYMENT ───────────────────────────────
     elif data.startswith("pay_crypto_"):
         amount = data.split("_")[2]
         inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
         usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         await query.edit_message_text(
-            f"🪙 *Crypto Payment — {amount} USDT*\n\n"
+            f"🪙 *Crypto Payment*\n\n"
             f"Amount: *{usdt_amount} USDT* ({inr_price})\n"
             f"Network: *ERC20*\n\n"
             f"Wallet Address:\n`{CRYPTO_ADDRESS}`\n\n"
