@@ -52,4 +52,24 @@ def after_upi_menu(amount, type):
     return InlineKeyboardMarkup(keyboard)
 
 def after_crypto_menu(amount, type):
-    # shown after Cry
+    # shown after Crypto selected — only shows UPI option + back
+    if type == "flash":
+        keyboard = [
+            [InlineKeyboardButton("💳 Pay via UPI instead", callback_data=f"pay_upi_{amount}")],
+            [InlineKeyboardButton("⬅️ Back", callback_data=f"flash_select_{amount}")]
+        ]
+    else:
+        keyboard = [
+            [InlineKeyboardButton("💳 Pay via UPI instead", callback_data=f"panelpay_upi_{amount}")],
+            [InlineKeyboardButton("⬅️ Back", callback_data=f"panel_{amount}")]
+        ]
+    return InlineKeyboardMarkup(keyboard)
+
+def panel_payment_menu(panel):
+    # shown when panel selected — both options
+    keyboard = [
+        [InlineKeyboardButton("💳 Pay via UPI", callback_data=f"panelpay_upi_{panel}")],
+        [InlineKeyboardButton("🪙 Pay via Crypto (ERC20)", callback_data=f"panelpay_crypto_{panel}")],
+        [InlineKeyboardButton("⬅️ Back to Panels", callback_data="menu_panels")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
