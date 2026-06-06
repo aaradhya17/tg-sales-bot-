@@ -172,7 +172,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         inr_price = USDT_PRICES.get(amount, "")
         await query.edit_message_text(
             f"🪙 *Crypto Payment — {amount} USDT*\n\n"
-            f"Amount: *{inr_price} worth of USDT(6.30 USDT)*\n"
+            f"Amount: *{inr_price} worth of USDT*\n"
             f"Network: *ERC20*\n\n"
             f"Wallet Address:\n`{CRYPTO_ADDRESS}`\n\n"
             f"*Steps:*\n"
