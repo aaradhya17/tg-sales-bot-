@@ -151,7 +151,8 @@ usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
     # ── FLASH UPI PAYMENT → show only Crypto option after ─
     elif data.startswith("pay_upi_"):
         amount = data.split("_")[2]
-        inr_price = USDT_PRICES.get(amount, "")
+        inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
+usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         await query.edit_message_text(
             f"💳 *UPI Payment — {amount} USDT*\n\n"
             f"Amount: *{inr_price}*\n\n"
@@ -170,7 +171,8 @@ usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
     # ── FLASH CRYPTO PAYMENT → show only UPI option after ─
     elif data.startswith("pay_crypto_"):
         amount = data.split("_")[2]
-        inr_price = USDT_PRICES.get(amount, "")
+        inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
+usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         await query.edit_message_text(
             f"🪙 *Crypto Payment — {amount} USDT*\n\n"
             f"Amount: *{inr_price} worth of USDT*\n"
