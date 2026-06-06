@@ -9,10 +9,10 @@ from keyboards import (
 )
 
 # ── EDIT THESE WITH YOUR DETAILS ──────────────────────────
-UPI_ID = "yourname@upi"
-UPI_NAME = "Your Name"
-CRYPTO_ADDRESS = "0xYourERC20WalletHere"   # ERC20 wallet address
-ADMIN_USERNAME = "@YourAdminUsername"
+UPI_ID = "aaradhyya@slc"
+UPI_NAME = "aaradhya"
+CRYPTO_ADDRESS = "0xc2bb8b613c19aDA1605E6c71aF44CC6b4bb9076a"   # ERC20 wallet address
+ADMIN_USERNAME = "@@Iamhere0013"
 PANEL_PRICE = "₹800"
 # ──────────────────────────────────────────────────────────
 
