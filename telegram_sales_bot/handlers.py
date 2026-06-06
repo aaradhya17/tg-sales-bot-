@@ -45,9 +45,6 @@ PANEL_DETAILS = {
     "indepay":    "🌐 URL: https://indepay.example.com",
 }
 
-# stores wallet addresses for flash USDT buyers: {user_id: wallet}
-user_wallets = {}
-
 
 async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
@@ -55,11 +52,13 @@ async def start(update: Update, context: CallbackContext) -> None:
         reply_markup=main_menu()
     )
 
+
 async def menu(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
         "🏠 Main Menu:",
         reply_markup=main_menu()
     )
+
 
 # ── SCREENSHOT HANDLER ─────────────────────────────────────
 async def handle_screenshot(update: Update, context: CallbackContext) -> None:
@@ -71,13 +70,13 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     amount = user_data.get("pending_amount", "")
     wallet = user_data.get("wallet_address", "")
 
-    # If flash order and no wallet yet — ask for it first
+    # If flash order and no wallet yet — save screenshot and ask for wallet
     if order_type == "flash" and not wallet:
         user_data["pending_screenshot"] = update.message.photo[-1].file_id
         await update.message.reply_text(
-            "👛 *Please enter your ERC20 wallet address first:*\n\n"
-            "Type and send your wallet address below, "
-            "then your screenshot will be submitted automatically.",
+            "👛 *Please enter your ERC20 wallet address:*\n\n"
+            "Type and send your wallet address below — "
+            "then your order will be submitted automatically.",
             parse_mode="Markdown"
         )
         return
@@ -86,10 +85,10 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
                         panel_key, order_type, amount, wallet)
 
 
+# ── SUBMIT ORDER TO ADMIN ──────────────────────────────────
 async def _submit_order(update, context, user, user_data,
                         panel_key, order_type, amount, wallet):
 
-    # Build order description
     if order_type == "panel":
         panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
         order_desc = f"💳 Panel: *{panel_name}*\n💰 Amount: *{PANEL_PRICE}*"
@@ -102,7 +101,6 @@ async def _submit_order(update, context, user, user_data,
             f"👛 Buyer Wallet: `{wallet}`"
         )
 
-    # Confirm button for buyer
     confirm_buyer_kb = InlineKeyboardMarkup([
         [InlineKeyboardButton(
             "✅ Confirm Payment Sent",
@@ -122,7 +120,6 @@ async def _submit_order(update, context, user, user_data,
         reply_markup=confirm_buyer_kb
     )
 
-    # Admin buttons
     admin_kb = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
@@ -143,7 +140,6 @@ async def _submit_order(update, context, user, user_data,
         f"📋 *Order Details:*\n{order_desc}"
     )
 
-    # Get screenshot — either from pending or current message
     photo_id = user_data.pop("pending_screenshot", None)
     if not photo_id and update.message:
         photo_id = update.message.photo[-1].file_id
@@ -164,10 +160,10 @@ async def _submit_order(update, context, user, user_data,
             reply_markup=admin_kb
         )
 
-    # Clear wallet after submission
     user_data.pop("wallet_address", None)
 
-# ── WALLET ADDRESS HANDLER ─────────────────────────────────
+
+# ── TEXT HANDLER (wallet address input) ───────────────────
 async def handle_text(update: Update, context: CallbackContext) -> None:
     user_data = context.user_data
 
@@ -176,7 +172,6 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
         user_data["wallet_address"] = wallet
         user_data["waiting_wallet"] = False
 
-        # Check if screenshot was already sent before wallet
         pending_screenshot = user_data.get("pending_screenshot")
         if pending_screenshot:
             await update.message.reply_text(
@@ -201,6 +196,13 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
             "Please use the menu to navigate.",
             reply_markup=main_menu()
         )
+
+
+# ── CALLBACK HANDLER ───────────────────────────────────────
+async def handle_callbacks(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    await query.answer()
+    data = query.data
 
     # ── ADMIN CONFIRM PAYMENT ──────────────────────────────
     if data.startswith("confirm_"):
@@ -237,7 +239,6 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
                 parse_mode="Markdown"
             )
 
-        # Update admin message
         await query.edit_message_caption(
             caption=query.message.caption + "\n\n✅ *CONFIRMED — Order sent to user*",
             parse_mode="Markdown"
@@ -245,25 +246,13 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
 
     # ── BUYER CONFIRMS PAYMENT SENT ────────────────────────
     elif data.startswith("buyerconfirm_"):
-        parts = data.split("_")
-        order_type = parts[2] if len(parts) > 2 else "panel"
-
-        # If flash USDT, ask for wallet address first
-        if order_type == "flash":
-            context.user_data["waiting_wallet"] = True
-            await query.edit_message_text(
-                "✅ *Payment confirmation received!*\n\n"
-                "👛 Please send your *ERC20 wallet address* so we can send your USDT:",
-                parse_mode="Markdown"
-            )
-        else:
-            await query.edit_message_text(
-                "✅ *Payment confirmation received!*\n\n"
-                "🔍 Our admin is reviewing your screenshot now.\n\n"
-                "⏳ Your order will be delivered to you shortly.\n\n"
-                f"For any help: {ADMIN_USERNAME}",
-                parse_mode="Markdown"
-            )
+        await query.edit_message_text(
+            "✅ *Payment confirmation received!*\n\n"
+            "🔍 Our admin is reviewing your screenshot now.\n\n"
+            "⏳ Your order will be delivered to you shortly.\n\n"
+            f"For any help: {ADMIN_USERNAME}",
+            parse_mode="Markdown"
+        )
 
     # ── ADMIN REJECT PAYMENT ───────────────────────────────
     elif data.startswith("reject_"):
@@ -326,118 +315,4 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
     # ── PANEL SELECTED ─────────────────────────────────────
     elif data in PANEL_NAMES:
         panel_name = PANEL_NAMES[data]
-        panel_key = data.replace("panel_", "")
-        context.user_data["pending_panel"] = panel_key
-        context.user_data["pending_type"] = "panel"
-        await query.edit_message_text(
-            f"💳 *{panel_name} Panel*\n\n"
-            f"💰 Price: *{PANEL_PRICE}*\n\n"
-            f"Choose your payment method:",
-            parse_mode="Markdown",
-            reply_markup=panel_payment_menu(panel_key)
-        )
-
-    # ── PANEL UPI PAYMENT ─────────────────────────────────
-    elif data.startswith("panelpay_upi_"):
-        panel_key = data.replace("panelpay_upi_", "")
-        panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
-        context.user_data["pending_panel"] = panel_key
-        context.user_data["pending_type"] = "panel"
-        await query.edit_message_text(
-            f"💳 *UPI Payment — {panel_name} Panel*\n\n"
-            f"Amount: *{PANEL_PRICE}*\n\n"
-            f"UPI ID: `{UPI_ID}`\n"
-            f"Name: *{UPI_NAME}*\n\n"
-            f"*Steps:*\n"
-            f"1️⃣ Open GPay / PhonePe / Paytm\n"
-            f"2️⃣ Send {PANEL_PRICE} to UPI ID above\n"
-            f"3️⃣ Take screenshot of payment\n"
-            f"4️⃣ *Send screenshot here in this chat*\n\n"
-            f"✅ Access will be given after confirmation.",
-            parse_mode="Markdown",
-            reply_markup=after_upi_menu(panel_key, "panel")
-        )
-
-    # ── PANEL CRYPTO PAYMENT ───────────────────────────────
-    elif data.startswith("panelpay_crypto_"):
-        panel_key = data.replace("panelpay_crypto_", "")
-        panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
-        context.user_data["pending_panel"] = panel_key
-        context.user_data["pending_type"] = "panel"
-        await query.edit_message_text(
-            f"🪙 *Crypto Payment — {panel_name} Panel*\n\n"
-            f"Amount: *{PANEL_PRICE} worth of USDT*\n"
-            f"Network: *ERC20*\n\n"
-            f"Wallet Address:\n`{CRYPTO_ADDRESS}`\n\n"
-            f"*Steps:*\n"
-            f"1️⃣ Open your crypto wallet\n"
-            f"2️⃣ Send USDT on *ERC20 network*\n"
-            f"3️⃣ Take screenshot of transaction\n"
-            f"4️⃣ *Send screenshot here in this chat*\n\n"
-            f"✅ Access will be given after confirmation.",
-            parse_mode="Markdown",
-            reply_markup=after_crypto_menu(panel_key, "panel")
-        )
-
-    # ── FLASH USDT AMOUNT SELECTED ─────────────────────────
-    elif data.startswith("flash_select_"):
-        amount = data.split("_")[2]
-        inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
-        usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
-        context.user_data["pending_type"] = "flash"
-        context.user_data["pending_amount"] = amount
-        await query.edit_message_text(
-            f"⚡ *Flash USDT*\n\n"
-            f"💰 Price: *{inr_price}* ({usdt_amount} USDT)\n\n"
-            f"Choose payment method:",
-            parse_mode="Markdown",
-            reply_markup=payment_menu(amount)
-        )
-
-    # ── FLASH UPI PAYMENT ──────────────────────────────────
-    elif data.startswith("pay_upi_"):
-        amount = data.split("_")[2]
-        inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
-        usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
-        context.user_data["pending_type"] = "flash"
-        context.user_data["pending_amount"] = amount
-        context.user_data["waiting_wallet"] = True
-        await query.edit_message_text(
-            f"💳 *UPI Payment*\n\n"
-            f"Amount: *{inr_price}* ({usdt_amount} USDT)\n\n"
-            f"UPI ID: `{UPI_ID}`\n"
-            f"Name: *{UPI_NAME}*\n\n"
-            f"*Steps:*\n"
-            f"1️⃣ Open GPay / PhonePe / Paytm\n"
-            f"2️⃣ Send {inr_price} to UPI ID above\n"
-            f"3️⃣ Take screenshot of payment\n"
-            f"4️⃣ Enter your *ERC20 wallet address* below\n"
-            f"5️⃣ Then send screenshot of payment\n\n"
-            f"✅ USDT will be sent after confirmation.",
-            parse_mode="Markdown",
-            reply_markup=after_upi_menu(amount, "flash")
-        )
-
-    # ── FLASH CRYPTO PAYMENT ───────────────────────────────
-    elif data.startswith("pay_crypto_"):
-        amount = data.split("_")[2]
-        inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
-        usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
-        context.user_data["pending_type"] = "flash"
-        context.user_data["pending_amount"] = amount
-        context.user_data["waiting_wallet"] = True
-        await query.edit_message_text(
-            f"🪙 *Crypto Payment*\n\n"
-            f"Amount: *{usdt_amount} USDT* ({inr_price})\n"
-            f"Network: *ERC20*\n\n"
-            f"Wallet Address:\n`{CRYPTO_ADDRESS}`\n\n"
-            f"*Steps:*\n"
-            f"1️⃣ Open your crypto wallet\n"
-            f"2️⃣ Send {usdt_amount} USDT on *ERC20 network*\n"
-            f"3️⃣ Take screenshot of transaction\n"
-            f"4️⃣ Enter your *ERC20 wallet address* below\n"
-            f"5️⃣ Then send screenshot of payment\n\n"
-            f"✅ USDT will be sent after confirmation.",
-            parse_mode="Markdown",
-            reply_markup=after_crypto_menu(amount, "flash")
-        )
+        panel_key = data.replace("panel_", ""
