@@ -190,15 +190,19 @@ async def _submit_order(context, user, panel_key, order_type, amount, wallet):
 
 # ── TEXT HANDLER (wallet address) ─────────────────────────
 async def handle_text(update: Update, context: CallbackContext) -> None:
-    user_data = context.user_data
     user = update.message.from_user
 
-    if user_data.get("waiting_wallet"):
+    # Check global dict instead of context.user_data
+    order_data = pending_orders.get(user.id, {})
+
+    if order_data.get("waiting_wallet"):
         wallet = update.message.text.strip()
-        user_data["waiting_wallet"] = False
 
         print(f"DEBUG wallet received from {user.id}: {wallet}")
-        print(f"DEBUG pending_orders for user: {pending_orders.get(user.id)}")
+        print(f"DEBUG order_data: {order_data}")
+
+        # Update global dict
+        pending_orders[user.id]["waiting_wallet"] = False
 
         await update.message.reply_text(
             f"✅ Wallet saved:\n`{wallet}`\n\n"
@@ -206,11 +210,9 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
             parse_mode="Markdown"
         )
 
-        # Get order details from global dict
-        order_data = pending_orders.get(user.id, {})
-        panel_key = order_data.get("panel_key", "unknown")
+        panel_key  = order_data.get("panel_key", "unknown")
         order_type = order_data.get("order_type", "flash")
-        amount = order_data.get("amount", "")
+        amount     = order_data.get("amount", "")
 
         await _submit_order(context, user, panel_key, order_type, amount, wallet)
 
