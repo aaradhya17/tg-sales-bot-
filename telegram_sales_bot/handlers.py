@@ -121,9 +121,3 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
                 parse_mode="Markdown",
                 reply_markup=panels_menu()
             )
-
-async def add_handlers(application):
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("menu", menu))
-    # ONE handler catches ALL button clicks
-    application.add_handler(CallbackQueryHandler(handle_callbacks))
