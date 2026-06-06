@@ -161,17 +161,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         order_type = parts[3]
         amount = parts[4] if len(parts) > 4 else ""
 
-        # ── BUYER CONFIRMS PAYMENT SENT ────────────────────────
-    elif data.startswith("buyerconfirm_"):
-        await query.edit_message_text(
-            "✅ *Payment confirmation received!*\n\n"
-            "🔍 Our admin is reviewing your screenshot now.\n\n"
-            "⏳ Your order will be delivered to you shortly.\n\n"
-            f"For any help: {ADMIN_USERNAME}",
-            parse_mode="Markdown"
-        )
-
-        if order_type == "panel":
+    if order_type == "panel":
             panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
             details = PANEL_DETAILS.get(panel_key, "Contact admin for details.")
             await context.bot.send_message(
@@ -198,6 +188,18 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
                 parse_mode="Markdown"
             )
 
+
+        # ── BUYER CONFIRMS PAYMENT SENT ────────────────────────
+    elif data.startswith("buyerconfirm_"):
+        await query.edit_message_text(
+            "✅ *Payment confirmation received!*\n\n"
+            "🔍 Our admin is reviewing your screenshot now.\n\n"
+            "⏳ Your order will be delivered to you shortly.\n\n"
+            f"For any help: {ADMIN_USERNAME}",
+            parse_mode="Markdown"
+        )
+
+        
         # Update admin message to show confirmed
         await query.edit_message_caption(
             caption=query.message.caption + "\n\n✅ *CONFIRMED by admin*",
