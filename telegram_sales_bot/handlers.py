@@ -36,11 +36,11 @@ PANEL_NAMES = {
 
 # Panel details sent to buyer after admin confirms payment
 PANEL_DETAILS = {
-    "jeevan":      "🌐 URL: https://jeevan.example.com\n👤 User: jeevan_user\n🔑 Pass: jeevan123",
-    "trizo":       "🌐 URL: https://trizo.example.com\n👤 User: trizo_user\n🔑 Pass: trizo123",
-    "savingland":  "🌐 URL: https://savingland.example.com\n👤 User: saving_user\n🔑 Pass: saving123",
+    "jeevan":      "🌐 URL: https://www.okbinances.com/cmw/#/login/Qlf5N1SU\n👤 User: jeevan_user\n🔑 Pass: jeevan123",
+    "trizo":       "🌐 URL: https://trizo.xyraflo.com/register.html?inviteCode=yUodx3\n👤 User: trizo_user\n🔑 Pass: trizo123",
+    "savingland":  "🌐 URL: https://savings-land.com/reg?code=6nmjOs\n👤 User: saving_user\n🔑 Pass: saving123",
     "dragonpay":   "🌐 URL: https://dragonpay.example.com\n👤 User: dragon_user\n🔑 Pass: dragon123",
-    "kuvera":      "🌐 URL: https://kuvera.example.com\n👤 User: kuvera_user\n🔑 Pass: kuvera123",
+    "kuvera":      "🌐 URL: https://mobile.kvrpay.in/#/pages/user/register?invite_code=jjD2d5\n👤 User: kuvera_user\n🔑 Pass: kuvera123",
     "bigwinner":   "🌐 URL: https://bigwinner.example.com\n👤 User: big_user\n🔑 Pass: big123",
     "qqpay":       "🌐 URL: https://qqpay.example.com\n👤 User: qq_user\n🔑 Pass: qq123",
     "indepay":     "🌐 URL: https://indepay.example.com\n👤 User: inde_user\n🔑 Pass: inde123",
