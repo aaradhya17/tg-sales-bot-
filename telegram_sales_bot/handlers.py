@@ -67,12 +67,11 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     user = update.message.from_user
     user_data = context.user_data
 
-    # Check if user has a pending order stored
     panel_key = user_data.get("pending_panel")
     order_type = user_data.get("pending_type", "panel")
     amount = user_data.get("pending_amount", "")
 
-    if not panel_key:
+    if not panel_key and order_type != "flash":
         await update.message.reply_text(
             "⚠️ Please select a panel or USDT amount first before sending screenshot."
         )
@@ -94,7 +93,7 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         ]
     ])
 
-    # Forward screenshot to admin with order info
+    # Forward screenshot to admin
     caption = (
         f"📸 *New Payment Screenshot*\n\n"
         f"👤 User: [{user.first_name}](tg://user?id={user.id})\n"
@@ -102,7 +101,7 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         f"📋 Order:\n{order_desc}"
     )
 
-    admin_msg = await context.bot.send_photo(
+    await context.bot.send_photo(
         chat_id=ADMIN_ID,
         photo=update.message.photo[-1].file_id,
         caption=caption,
@@ -110,18 +109,12 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
         reply_markup=confirm_kb
     )
 
-    # Save pending order
-    pending_orders[admin_msg.message_id] = {
-        "user_id": user.id,
-        "panel_key": panel_key,
-        "order_type": order_type,
-        "amount": amount
-    }
-
+    # ── THIS IS THE NEW MESSAGE SENT TO BUYER INSTANTLY ──
     await update.message.reply_text(
-        "📸 *Screenshot received!*\n\n"
-        "✅ Your payment is being verified by admin.\n"
-        "You will receive your order details shortly.",
+        "🙏 *Thank you for your purchase!*\n\n"
+        "⏳ Please wait while we are confirming your payment.\n\n"
+        "📦 Your order will be sent to you after confirmation.\n\n"
+        f"For any help contact: {ADMIN_USERNAME}",
         parse_mode="Markdown"
     )
 
