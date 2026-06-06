@@ -52,4 +52,3 @@ def after_upi_menu(amount, type):
     return InlineKeyboardMarkup(keyboard)
 
 def after_crypto_menu(amount, type):
-    # shown after Cry
