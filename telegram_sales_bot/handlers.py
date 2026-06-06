@@ -5,7 +5,7 @@ from telegram.ext import CallbackContext, CallbackQueryHandler, CommandHandler
 from keyboards import main_menu, panels_menu, flash_usdt_menu, payment_menu, panel_payment_menu
 
 # ── EDIT THESE WITH YOUR DETAILS ──────────────────────────
-UPI_ID = ""               # your UPI ID
+UPI_ID = "aaradhyya@slc"               # your UPI ID
 UPI_NAME = AARADHYA"                # name shown on UPI
 CRYPTO_ADDRESS = "0xc2bb8b613c19aDA1605E6c71aF44CC6b4bb9076a"    # USDT ERC20 wallet address
 ADMIN_USERNAME = "@@Iamhere0013" # your Telegram username
