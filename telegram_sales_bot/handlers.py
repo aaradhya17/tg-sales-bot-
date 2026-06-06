@@ -142,7 +142,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
 usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         await query.edit_message_text(
             f"⚡ *Flash USDT — {amount} USDT*\n\n"
-            f"💰 Price: *{inr_price}*\n\n"
+            f"💰 Price: *{inr_price}* ({usdt_amount} USDT)\n\n"
             f"Choose payment method:",
             parse_mode="Markdown",
             reply_markup=payment_menu(amount)
