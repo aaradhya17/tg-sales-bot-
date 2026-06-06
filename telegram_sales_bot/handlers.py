@@ -70,22 +70,23 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     amount = user_data.get("pending_amount", "")
     wallet = user_data.get("wallet_address", "")
 
-    # If flash order and no wallet yet — save screenshot and ask for wallet
+    # Flash order but no wallet yet — save screenshot, ask for wallet once
     if order_type == "flash" and not wallet:
         user_data["pending_screenshot"] = update.message.photo[-1].file_id
+        user_data["waiting_wallet"] = True
         await update.message.reply_text(
             "👛 *Please enter your ERC20 wallet address:*\n\n"
-            "Type and send your wallet address below — "
-            "then your order will be submitted automatically.",
+            "Type and send it below — your order will be submitted automatically after.",
             parse_mode="Markdown"
         )
         return
 
+    # Panel order or flash with wallet already saved — submit directly
     await _submit_order(update, context, user, user_data,
                         panel_key, order_type, amount, wallet)
 
 
-# ── SUBMIT ORDER TO ADMIN ──────────────────────────────────
+# ── SUBMIT ORDER ───────────────────────────────────────────
 async def _submit_order(update, context, user, user_data,
                         panel_key, order_type, amount, wallet):
 
@@ -101,6 +102,7 @@ async def _submit_order(update, context, user, user_data,
             f"👛 Buyer Wallet: `{wallet}`"
         )
 
+    # Thank you message to buyer with confirm button
     confirm_buyer_kb = InlineKeyboardMarkup([
         [InlineKeyboardButton(
             "✅ Confirm Payment Sent",
@@ -120,6 +122,7 @@ async def _submit_order(update, context, user, user_data,
         reply_markup=confirm_buyer_kb
     )
 
+    # Admin buttons
     admin_kb = InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
@@ -160,10 +163,13 @@ async def _submit_order(update, context, user, user_data,
             reply_markup=admin_kb
         )
 
+    # Clear all pending data after submission
     user_data.pop("wallet_address", None)
+    user_data.pop("waiting_wallet", None)
+    user_data.pop("pending_screenshot", None)
 
 
-# ── TEXT HANDLER (wallet address input) ───────────────────
+# ── TEXT HANDLER ───────────────────────────────────────────
 async def handle_text(update: Update, context: CallbackContext) -> None:
     user_data = context.user_data
 
@@ -172,10 +178,10 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
         user_data["wallet_address"] = wallet
         user_data["waiting_wallet"] = False
 
-        pending_screenshot = user_data.get("pending_screenshot")
-        if pending_screenshot:
+        # Screenshot was already sent before wallet — submit now
+        if user_data.get("pending_screenshot"):
             await update.message.reply_text(
-                f"✅ Wallet saved: `{wallet}`\n\n"
+                f"✅ Wallet saved:\n`{wallet}`\n\n"
                 f"📤 Submitting your order now...",
                 parse_mode="Markdown"
             )
@@ -186,8 +192,9 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
             await _submit_order(update, context, user, user_data,
                                 panel_key, order_type, amount, wallet)
         else:
+            # Wallet saved, now waiting for screenshot
             await update.message.reply_text(
-                f"✅ Wallet address saved:\n`{wallet}`\n\n"
+                f"✅ Wallet saved:\n`{wallet}`\n\n"
                 f"📸 Now send your payment screenshot.",
                 parse_mode="Markdown"
             )
@@ -204,7 +211,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
     await query.answer()
     data = query.data
 
-    # ── ADMIN CONFIRM PAYMENT ──────────────────────────────
+    # ── ADMIN CONFIRM ──────────────────────────────────────
     if data.startswith("confirm_"):
         parts = data.split("_")
         user_id = int(parts[1])
@@ -219,7 +226,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
                 chat_id=user_id,
                 text=(
                     f"✅ *Payment Confirmed!*\n\n"
-                    f"🎉 Thank you! Here are your *{panel_name}* panel details:\n\n"
+                    f"🎉 Here are your *{panel_name}* panel details:\n\n"
                     f"{details}\n\n"
                     f"⚠️ Keep these details safe.\n"
                     f"For support: {ADMIN_USERNAME}"
@@ -244,7 +251,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
             parse_mode="Markdown"
         )
 
-    # ── BUYER CONFIRMS PAYMENT SENT ────────────────────────
+    # ── BUYER CONFIRMS ─────────────────────────────────────
     elif data.startswith("buyerconfirm_"):
         await query.edit_message_text(
             "✅ *Payment confirmation received!*\n\n"
@@ -254,7 +261,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
             parse_mode="Markdown"
         )
 
-    # ── ADMIN REJECT PAYMENT ───────────────────────────────
+    # ── ADMIN REJECT ───────────────────────────────────────
     elif data.startswith("reject_"):
         user_id = int(data.split("_")[1])
         await context.bot.send_message(
@@ -390,7 +397,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         context.user_data["pending_type"] = "flash"
         context.user_data["pending_amount"] = amount
-        context.user_data["waiting_wallet"] = True
+        # DO NOT set waiting_wallet here — only set it when screenshot arrives
         await query.edit_message_text(
             f"💳 *UPI Payment*\n\n"
             f"Amount: *{inr_price}* ({usdt_amount} USDT)\n\n"
@@ -399,8 +406,8 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
             f"*Steps:*\n"
             f"1️⃣ Open GPay / PhonePe / Paytm\n"
             f"2️⃣ Send {inr_price} to UPI ID above\n"
-            f"3️⃣ First type your *ERC20 wallet address* here\n"
-            f"4️⃣ Then send screenshot of payment\n\n"
+            f"3️⃣ Take screenshot of payment\n"
+            f"4️⃣ *Send screenshot here in this chat*\n\n"
             f"✅ USDT will be sent after confirmation.",
             parse_mode="Markdown",
             reply_markup=after_upi_menu(amount, "flash")
@@ -413,7 +420,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         context.user_data["pending_type"] = "flash"
         context.user_data["pending_amount"] = amount
-        context.user_data["waiting_wallet"] = True
+        # DO NOT set waiting_wallet here — only set it when screenshot arrives
         await query.edit_message_text(
             f"🪙 *Crypto Payment*\n\n"
             f"Amount: *{usdt_amount} USDT* ({inr_price})\n"
@@ -422,8 +429,8 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
             f"*Steps:*\n"
             f"1️⃣ Open your crypto wallet\n"
             f"2️⃣ Send {usdt_amount} USDT on *ERC20 network*\n"
-            f"3️⃣ First type your *ERC20 wallet address* here\n"
-            f"4️⃣ Then send screenshot of transaction\n\n"
+            f"3️⃣ Take screenshot of transaction\n"
+            f"4️⃣ *Send screenshot here in this chat*\n\n"
             f"✅ Confirmed within 30 minutes.",
             parse_mode="Markdown",
             reply_markup=after_crypto_menu(amount, "flash")
