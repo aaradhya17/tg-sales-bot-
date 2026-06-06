@@ -64,7 +64,8 @@ async def menu(update: Update, context: CallbackContext) -> None:
     )
 
 
-# ── SCREENSHOT HANDLER ─────────────────────────────────────async def handle_screenshot(update: Update, context: CallbackContext) -> None:
+# ── SCREENSHOT HANDLER ─────────────────────────────────────
+    async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     user = update.message.from_user
     user_data = context.user_data
 
