@@ -5,7 +5,7 @@ from telegram.ext import CallbackContext
 from keyboards import (
     main_menu, panels_menu, flash_usdt_menu,
     payment_menu, panel_payment_menu,
-    after_upi_menu, after_crypto_menu
+    after_upi_menu, after_crypto_menu, after_binance_menu
 )
 
 # ── EDIT THESE WITH YOUR DETAILS ──────────────────────────
