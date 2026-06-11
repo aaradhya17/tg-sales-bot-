@@ -33,47 +33,64 @@ def flash_usdt_menu():
     return InlineKeyboardMarkup(keyboard)
 
 def payment_menu(amount):
-    # shown when user first selects USDT amount — both options
     keyboard = [
         [InlineKeyboardButton("💳 Pay via UPI", callback_data=f"pay_upi_{amount}")],
         [InlineKeyboardButton("🪙 Pay via Crypto (ERC20)", callback_data=f"pay_crypto_{amount}")],
+        [InlineKeyboardButton("🟡 Pay via Binance UID", callback_data=f"pay_binance_{amount}")],
         [InlineKeyboardButton("⬅️ Back to USDT Menu", callback_data="menu_flash_usdt")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def after_upi_menu(amount, type):
-    # shown after UPI selected — only shows Crypto option + back
     if type == "flash":
         keyboard = [
             [InlineKeyboardButton("🪙 Pay via Crypto instead (ERC20)", callback_data=f"pay_crypto_{amount}")],
+            [InlineKeyboardButton("🟡 Pay via Binance UID instead", callback_data=f"pay_binance_{amount}")],
             [InlineKeyboardButton("⬅️ Back", callback_data=f"flash_select_{amount}")]
         ]
     else:
         keyboard = [
             [InlineKeyboardButton("🪙 Pay via Crypto instead (ERC20)", callback_data=f"panelpay_crypto_{amount}")],
+            [InlineKeyboardButton("🟡 Pay via Binance UID instead", callback_data=f"panelpay_binance_{amount}")],
             [InlineKeyboardButton("⬅️ Back", callback_data=f"panel_{amount}")]
         ]
     return InlineKeyboardMarkup(keyboard)
 
 def after_crypto_menu(amount, type):
-    # shown after Crypto selected — only shows UPI option + back
     if type == "flash":
         keyboard = [
             [InlineKeyboardButton("💳 Pay via UPI instead", callback_data=f"pay_upi_{amount}")],
+            [InlineKeyboardButton("🟡 Pay via Binance UID instead", callback_data=f"pay_binance_{amount}")],
             [InlineKeyboardButton("⬅️ Back", callback_data=f"flash_select_{amount}")]
         ]
     else:
         keyboard = [
             [InlineKeyboardButton("💳 Pay via UPI instead", callback_data=f"panelpay_upi_{amount}")],
+            [InlineKeyboardButton("🟡 Pay via Binance UID instead", callback_data=f"panelpay_binance_{amount}")],
+            [InlineKeyboardButton("⬅️ Back", callback_data=f"panel_{amount}")]
+        ]
+    return InlineKeyboardMarkup(keyboard)
+
+def after_binance_menu(amount, type):
+    if type == "flash":
+        keyboard = [
+            [InlineKeyboardButton("💳 Pay via UPI instead", callback_data=f"pay_upi_{amount}")],
+            [InlineKeyboardButton("🪙 Pay via Crypto instead (ERC20)", callback_data=f"pay_crypto_{amount}")],
+            [InlineKeyboardButton("⬅️ Back", callback_data=f"flash_select_{amount}")]
+        ]
+    else:
+        keyboard = [
+            [InlineKeyboardButton("💳 Pay via UPI instead", callback_data=f"panelpay_upi_{amount}")],
+            [InlineKeyboardButton("🪙 Pay via Crypto instead (ERC20)", callback_data=f"panelpay_crypto_{amount}")],
             [InlineKeyboardButton("⬅️ Back", callback_data=f"panel_{amount}")]
         ]
     return InlineKeyboardMarkup(keyboard)
 
 def panel_payment_menu(panel):
-    # shown when panel selected — both options
     keyboard = [
         [InlineKeyboardButton("💳 Pay via UPI", callback_data=f"panelpay_upi_{panel}")],
         [InlineKeyboardButton("🪙 Pay via Crypto (ERC20)", callback_data=f"panelpay_crypto_{panel}")],
+        [InlineKeyboardButton("🟡 Pay via Binance UID", callback_data=f"panelpay_binance_{panel}")],
         [InlineKeyboardButton("⬅️ Back to Panels", callback_data="menu_panels")]
     ]
     return InlineKeyboardMarkup(keyboard)
