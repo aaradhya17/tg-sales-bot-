@@ -452,3 +452,25 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
             parse_mode="Markdown",
             reply_markup=after_crypto_menu(amount, "flash")
         )
+    # ── FLASH BINANCE PAYMENT ──────────────────────────────
+    elif data.startswith("pay_binance_"):
+        amount = data.split("_")[2]
+        inr_price = USDT_PRICES.get(amount, {}).get("inr", "")
+        usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
+        context.user_data["pending_type"] = "flash"
+        context.user_data["pending_amount"] = amount
+        await query.edit_message_text(
+            f"🟡 *Binance UID Payment*\n\n"
+            f"Amount: *{usdt_amount} USDT* ({inr_price})\n\n"
+            f"Binance UID: `{BINANCE_UID}`\n\n"
+            f"*Steps:*\n"
+            f"1️⃣ Open Binance app\n"
+            f"2️⃣ Go to Pay → Send\n"
+            f"3️⃣ Enter UID: `{BINANCE_UID}`\n"
+            f"4️⃣ Send {usdt_amount} USDT\n"
+            f"5️⃣ Take screenshot of payment\n"
+            f"6️⃣ *Send screenshot here in this chat*\n\n"
+            f"✅ Confirmed within 30 minutes.",
+            parse_mode="Markdown",
+            reply_markup=after_binance_menu(amount, "flash")
+        )
