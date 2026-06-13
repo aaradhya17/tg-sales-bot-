@@ -12,7 +12,7 @@ from keyboards import (
 UPI_ID = "aaradhyya@slc"
 UPI_NAME = "aaradhya"
 CRYPTO_ADDRESS = "0xc2bb8b613c19aDA1605E6c71aF44CC6b4bb9076a"
-BINANCE_UID = "836380581"    
+BINANCE_UID = ""    
 ADMIN_USERNAME = "@mrjinhere"
 ADMIN_ID = 8612577961
 PANEL_PRICE = "₹800"
