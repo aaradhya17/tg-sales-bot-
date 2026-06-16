@@ -404,8 +404,9 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         usdt_amount = USDT_PRICES.get(amount, {}).get("usdt", "")
         context.user_data["pending_type"] = "flash"
         context.user_data["pending_amount"] = amount
+        label = "🎯 Demo Flash USDT" if amount == "demo" else "⚡ Flash USDT"
         await query.edit_message_text(
-            f"⚡ *Flash USDT*\n\n"
+            f"{label}\n\n"
             f"💰 Price: *{inr_price}* ({usdt_amount} USDT)\n\n"
             f"Choose payment method:",
             parse_mode="Markdown",
