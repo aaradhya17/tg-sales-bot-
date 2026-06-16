@@ -11,14 +11,12 @@ from keyboards import (
 # ── EDIT THESE WITH YOUR DETAILS ──────────────────────────
 UPI_ID = "aaradhyya@slc"
 UPI_NAME = "aaradhya"
-CRYPTO_ADDRESS = "0xc2bb8b613c19aDA1605E6c71aF44CC6b4bb9076a"
-BINANCE_UID = ""    
+CRYPTO_ADDRESS = "your_bep20_wallet_address_here"  # ← paste your BEP20 address
+BINANCE_UID = ""                                    # ← paste your Binance UID
 ADMIN_USERNAME = "@mrjinhere"
 ADMIN_ID = 8612577961
-PANEL_PRICE = "₹800"
-# ──────────────────────────────────────────────────────────
-
 PANEL_PRICE = "₹299"
+# ──────────────────────────────────────────────────────────
 
 USDT_PRICES = {
     "demo": {"inr": "₹20",  "usdt": "5"},
@@ -49,8 +47,7 @@ PANEL_DETAILS = {
     "indepay":    "🌐 URL: https://indepay.example.com",
 }
 
-# ── GLOBAL STORAGE — persists across messages ──────────────
-# { user_id: { "photo_id": ..., "panel_key": ..., "order_type": ..., "amount": ... } }
+# ── GLOBAL STORAGE ─────────────────────────────────────────
 pending_orders = {}
 
 
@@ -68,7 +65,7 @@ async def menu(update: Update, context: CallbackContext) -> None:
     )
 
 
-# ── SCREENSHOT HANDLER ─────────────────────────────────────#
+# ── SCREENSHOT HANDLER ─────────────────────────────────────
 async def handle_screenshot(update: Update, context: CallbackContext) -> None:
     user = update.message.from_user
     user_data = context.user_data
@@ -101,7 +98,6 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
 # ── SUBMIT ORDER TO ADMIN ──────────────────────────────────
 async def _submit_order(context, user, panel_key, order_type, amount, wallet):
     try:
-        # Get stored data from global dict
         order_data = pending_orders.get(user.id, {})
         photo_id = order_data.get("photo_id")
 
@@ -119,7 +115,6 @@ async def _submit_order(context, user, panel_key, order_type, amount, wallet):
                 f"👛 Buyer Wallet: `{wallet}`"
             )
 
-        # Thank you + confirm button to buyer
         confirm_buyer_kb = InlineKeyboardMarkup([
             [InlineKeyboardButton(
                 "✅ Confirm Payment Sent",
@@ -139,7 +134,6 @@ async def _submit_order(context, user, panel_key, order_type, amount, wallet):
             reply_markup=confirm_buyer_kb
         )
 
-        # Admin buttons
         admin_kb = InlineKeyboardMarkup([
             [
                 InlineKeyboardButton(
@@ -169,7 +163,6 @@ async def _submit_order(context, user, panel_key, order_type, amount, wallet):
                 reply_markup=admin_kb
             )
         else:
-            # No photo — send text only
             await context.bot.send_message(
                 chat_id=ADMIN_ID,
                 text=f"⚠️ No screenshot.\n\n{caption}",
@@ -177,7 +170,6 @@ async def _submit_order(context, user, panel_key, order_type, amount, wallet):
                 reply_markup=admin_kb
             )
 
-        # Clear from global dict after sending
         pending_orders.pop(user.id, None)
 
     except Exception as e:
@@ -195,8 +187,6 @@ async def _submit_order(context, user, panel_key, order_type, amount, wallet):
 # ── TEXT HANDLER (wallet address) ─────────────────────────
 async def handle_text(update: Update, context: CallbackContext) -> None:
     user = update.message.from_user
-
-    # Check global dict instead of context.user_data
     order_data = pending_orders.get(user.id, {})
 
     if order_data.get("waiting_wallet"):
@@ -205,7 +195,6 @@ async def handle_text(update: Update, context: CallbackContext) -> None:
         print(f"DEBUG wallet received from {user.id}: {wallet}")
         print(f"DEBUG order_data: {order_data}")
 
-        # Update global dict
         pending_orders[user.id]["waiting_wallet"] = False
 
         await update.message.reply_text(
@@ -311,7 +300,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
 
     elif data == "menu_panels":
         await query.edit_message_text(
-            "💳 *Account Panels*\nPrice: *₹800 each*\n\nSelect a panel:",
+            "💳 *Account Panels*\nPrice: *₹299 each*\n\nSelect a panel:",
             parse_mode="Markdown",
             reply_markup=panels_menu()
         )
@@ -334,7 +323,7 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         await query.edit_message_text(
             "ℹ️ *Help*\n\n"
             "• Select a panel to buy access\n"
-            "• Pay via UPI or Crypto (ERC20)\n"
+            "• Pay via UPI or Crypto (BEP20)\n"
             "• Send payment screenshot to admin\n"
             f"• Admin: {ADMIN_USERNAME}",
             parse_mode="Markdown",
@@ -385,16 +374,38 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         await query.edit_message_text(
             f"🪙 *Crypto Payment — {panel_name} Panel*\n\n"
             f"Amount: *{PANEL_PRICE} worth of USDT*\n"
-            f"Network: *ERC20*\n\n"
+            f"Network: *BEP20 (BSC)*\n\n"
             f"Wallet Address:\n`{CRYPTO_ADDRESS}`\n\n"
             f"*Steps:*\n"
             f"1️⃣ Open your crypto wallet\n"
-            f"2️⃣ Send USDT on *ERC20 network*\n"
+            f"2️⃣ Send USDT on *BEP20 (BSC) network*\n"
             f"3️⃣ Take screenshot of transaction\n"
             f"4️⃣ *Send screenshot here in this chat*\n\n"
             f"✅ Access will be given after confirmation.",
             parse_mode="Markdown",
             reply_markup=after_crypto_menu(panel_key, "panel")
+        )
+
+    # ── PANEL BINANCE PAYMENT ──────────────────────────────
+    elif data.startswith("panelpay_binance_"):
+        panel_key = data.replace("panelpay_binance_", "")
+        panel_name = PANEL_NAMES.get(f"panel_{panel_key}", panel_key)
+        context.user_data["pending_panel"] = panel_key
+        context.user_data["pending_type"] = "panel"
+        await query.edit_message_text(
+            f"🟡 *Binance UID Payment — {panel_name} Panel*\n\n"
+            f"Amount: *{PANEL_PRICE}*\n\n"
+            f"Binance UID: `{BINANCE_UID}`\n\n"
+            f"*Steps:*\n"
+            f"1️⃣ Open Binance app\n"
+            f"2️⃣ Go to Pay → Send\n"
+            f"3️⃣ Enter UID: `{BINANCE_UID}`\n"
+            f"4️⃣ Send {PANEL_PRICE} worth of USDT\n"
+            f"5️⃣ Take screenshot of payment\n"
+            f"6️⃣ *Send screenshot here in this chat*\n\n"
+            f"✅ Access will be given after confirmation.",
+            parse_mode="Markdown",
+            reply_markup=after_binance_menu(panel_key, "panel")
         )
 
     # ── FLASH USDT AMOUNT SELECTED ─────────────────────────
@@ -445,17 +456,18 @@ async def handle_callbacks(update: Update, context: CallbackContext) -> None:
         await query.edit_message_text(
             f"🪙 *Crypto Payment*\n\n"
             f"Amount: *{usdt_amount} USDT* ({inr_price})\n"
-            f"Network: *ERC20*\n\n"
+            f"Network: *BEP20 (BSC)*\n\n"
             f"Wallet Address:\n`{CRYPTO_ADDRESS}`\n\n"
             f"*Steps:*\n"
             f"1️⃣ Open your crypto wallet\n"
-            f"2️⃣ Send {usdt_amount} USDT on *ERC20 network*\n"
+            f"2️⃣ Send {usdt_amount} USDT on *BEP20 (BSC) network*\n"
             f"3️⃣ Take screenshot of transaction\n"
             f"4️⃣ *Send screenshot here in this chat*\n\n"
             f"✅ Confirmed within 30 minutes.",
             parse_mode="Markdown",
             reply_markup=after_crypto_menu(amount, "flash")
         )
+
     # ── FLASH BINANCE PAYMENT ──────────────────────────────
     elif data.startswith("pay_binance_"):
         amount = data.split("_")[2]
