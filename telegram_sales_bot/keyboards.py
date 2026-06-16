@@ -26,9 +26,9 @@ def panels_menu():
 def flash_usdt_menu():
     keyboard = [
         [InlineKeyboardButton("🎯 Demo — 5$ USDT (₹20)", callback_data="flash_select_demo")],
-        [InlineKeyboardButton("100 USDT — ₹299", callback_data="flash_select_100")],
-        [InlineKeyboardButton("200 USDT — ₹599", callback_data="flash_select_200")],
-        [InlineKeyboardButton("300 USDT — ₹899", callback_data="flash_select_300")],
+        [InlineKeyboardButton("100 USDT — ₹99", callback_data="flash_select_100")],
+        [InlineKeyboardButton("200 USDT — ₹149", callback_data="flash_select_200")],
+        [InlineKeyboardButton("300 USDT — ₹199", callback_data="flash_select_300")],
         [InlineKeyboardButton("⬅️ Back to Main Menu", callback_data="menu_main")]
     ]
     return InlineKeyboardMarkup(keyboard)
