@@ -89,7 +89,7 @@ async def handle_screenshot(update: Update, context: CallbackContext) -> None:
 
     if order_type == "flash":
         await update.message.reply_text(
-            "👛 *Please enter your ERC20 wallet address:*\n\n"
+            "👛 *Please enter your BEP20 wallet address:*\n\n"
             "Type and send it here — your order will be submitted automatically after.",
             parse_mode="Markdown"
         )
